@@ -7,6 +7,7 @@ const userControl = require('./routes/v1/userControl');
 const sendMail = require('./routes/v1/sendMail');
 const installControl = require('./routes/v1/installControl');
 const systemInfo = require('./routes/v1/SystemInfo');
+const passageControl = require('./routes/v1/PassageControl');
 const app = express();
 
 // view engine setup
@@ -23,6 +24,7 @@ app.use('/v1/userControl', userControl);
 app.use('/v1/installControl', installControl);
 app.use('/v1/sendMail', sendMail);
 app.use('/v1/systemInfo', systemInfo);
+app.use('/v1/passageControl', passageControl);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

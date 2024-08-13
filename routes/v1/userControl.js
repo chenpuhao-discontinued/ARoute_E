@@ -183,5 +183,18 @@ router.get('/resetPassword', async function(req, res) {
   });
 });
 
+//获取总用户数
+router.get('/getUserCount', function(req, res) {
+  const db = createConnection();
+  db.get(`SELECT COUNT(*) AS count FROM userInfo`, function (error, row) {
+    db.close();
+    if (error) {
+      res.status(500).send({code: 500, message: 'Database error', error: error.message});
+    } else {
+      res.send({code: 200, message: 'success', data: row.count});
+    }
+  });
+});
+
 
 module.exports = router;
