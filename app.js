@@ -1,10 +1,13 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var userControl = require('./routes/v1/userControl');
-var app = express();
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const userControl = require('./routes/v1/userControl');
+const sendMail = require('./routes/v1/sendMail');
+const installControl = require('./routes/v1/installControl');
+const systemInfo = require('./routes/v1/SystemInfo');
+const app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -17,6 +20,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/v1/userControl', userControl);
+app.use('/v1/installControl', installControl);
+app.use('/v1/sendMail', sendMail);
+app.use('/v1/systemInfo', systemInfo);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

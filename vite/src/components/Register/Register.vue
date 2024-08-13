@@ -1,5 +1,5 @@
 <template>
-  <el-form class="login-form" :model="registerForm" @submit.prevent="submitLogin">
+  <el-form class="login-form" :model="registerForm" @submit.prevent="submitRegister">
     <el-form-item>
       <div class="login-logo gradient-text">ARoute</div>
     </el-form-item>
@@ -7,9 +7,11 @@
       <el-input class="custom-el-input" v-model="registerForm.email" placeholder="邮箱" clearable required></el-input>
     </el-form-item>
     <el-form-item>
-      <el-input class="custom-el-input" v-model="registerForm.verification_code" placeholder="验证码" clearable >
+      <el-input class="custom-el-input" v-model="registerForm.verification_code" placeholder="验证码" required clearable >
         <template #append>
-          <el-button type="primary" @click="sendEmail">发送验证码</el-button>
+          <el-button type="primary" @click="sendEmail" :disabled="isButtonDisabled">
+            {{ isButtonDisabled ? `${countdown}秒后重试` : '发送验证码' }}
+          </el-button>
         </template>
       </el-input>
     </el-form-item>
@@ -40,8 +42,32 @@
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue';
-import {ElNotification} from "element-plus";
+import { ref, onMounted } from 'vue';
+import { ElNotification } from "element-plus";
+
+let code = '';
+for (let i = 0; i < 6; i++) {
+  code += Math.floor(Math.random() * 10);
+}
+let title = 'ARoute';
+//获取网站名称
+fetch(`/api/v1/systemInfo/getWebsiteName`, {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+  }
+}).then(response => {
+  if (response.ok) {
+    return response.json();
+  } else {
+    throw new Error('网络错误');
+  }
+}).then(async data => {
+  if (data) {
+    //解析website_name
+    title = data.website_name;
+  }
+})
 
 const registerForm = ref({
   username: '',
@@ -51,20 +77,10 @@ const registerForm = ref({
   repeat: ''
 });
 
+const countdown = ref(0);
+const isButtonDisabled = ref(false);
+
 const sendEmail = () => {
-  // 在这里添加发送邮件逻辑
-};
-const submitLogin = () => {
-  // 检查密码是否一致
-  if (registerForm.value.password !== registerForm.value.repeat) {
-    ElNotification({
-      title: '错误',
-      message: '两次输入的密码不一致',
-      type: 'error'
-    });
-    return;
-  }
-  // 检查邮箱格式
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.value.email)) {
     ElNotification({
       title: '错误',
@@ -73,7 +89,8 @@ const submitLogin = () => {
     });
     return;
   }
-  // 通过/api/v1/userControl/isUserExist检查用户是否存在
+
+  //检查用户是否存在
   fetch(`/api/v1/userControl/isUserExist?email=${encodeURIComponent(registerForm.value.email)}`, {
     method: 'GET',
     headers: {
@@ -93,9 +110,110 @@ const submitLogin = () => {
         type: 'error'
       });
     } else {
-      //username为邮箱前缀
+      fetch(`/api/v1/sendMail/sendMail?to=${encodeURIComponent(registerForm.value.email)}&text=您的${encodeURIComponent(title)}注册验证码为${encodeURIComponent(code)}&subject=${encodeURIComponent(title)}注册验证码`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }).then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error('网络错误');
+        }
+      }).then(data => {
+        if (data) {
+          ElNotification({
+            title: '成功',
+            message: '验证码发送成功',
+            type: 'success'
+          });
+          startCountdown();
+        } else {
+          ElNotification({
+            title: '错误',
+            message: '验证码发送失败',
+            type: 'error'
+          });
+        }
+      }).catch(error => {
+        ElNotification({
+          title: '错误',
+          message: error,
+          type: 'error'
+        });
+      });
+    }
+  }).catch(error => {
+    ElNotification({
+      title: '错误',
+      message: error,
+      type: 'error'
+    });
+  });
+
+
+
+};
+
+const startCountdown = () => {
+  countdown.value = 30;
+  isButtonDisabled.value = true;
+  const interval = setInterval(() => {
+    countdown.value--;
+    if (countdown.value <= 0) {
+      clearInterval(interval);
+      isButtonDisabled.value = false;
+    }
+  }, 1000);
+};
+
+const submitRegister = () => {
+  if (registerForm.value.password !== registerForm.value.repeat) {
+    ElNotification({
+      title: '错误',
+      message: '两次输入的密码不一致',
+      type: 'error'
+    });
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.value.email)) {
+    ElNotification({
+      title: '错误',
+      message: '邮箱格式错误',
+      type: 'error'
+    });
+    return;
+  }
+  if (registerForm.value.verification_code !== code) {
+    ElNotification({
+      title: '错误',
+      message: '验证码错误',
+      type: 'error'
+    });
+    return;
+  }
+
+  fetch(`/api/v1/userControl/isUserExist?email=${encodeURIComponent(registerForm.value.email)}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  }).then(response => {
+    if (response.ok) {
+      return response.json();
+    } else {
+      throw new Error('网络错误');
+    }
+  }).then(data => {
+    if (data) {
+      ElNotification({
+        title: '错误',
+        message: '用户已存在',
+        type: 'error'
+      });
+    } else {
       registerForm.value.username = registerForm.value.email.split('@')[0];
-      // 通过/api/v1/userControl/register注册用户
       fetch(`/api/v1/userControl/register?username=${encodeURIComponent(registerForm.value.username)}&email=${encodeURIComponent(registerForm.value.email)}&password=${encodeURIComponent(registerForm.value.password)}`, {
         method: 'GET',
         headers: {
@@ -114,7 +232,6 @@ const submitLogin = () => {
             message: '注册成功',
             type: 'success'
           });
-          //延迟1秒跳转到登录页面
           setTimeout(() => {
             window.location.href = '/console/login';
           }, 1000);
@@ -143,9 +260,10 @@ const submitLogin = () => {
 };
 
 onMounted(() => {
-  document.title = "注册"; // Set the page title
+  document.title = "注册";
 });
 </script>
+
 
 <style scoped>
 .login-label {

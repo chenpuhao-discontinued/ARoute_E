@@ -1,5 +1,5 @@
 <template>
-  <el-form class="login-form" :model="resetForm" @submit.prevent="submitLogin">
+  <el-form class="login-form" :model="resetForm" @submit.prevent="submitReset">
     <el-form-item>
       <div class="login-logo gradient-text">ARoute</div>
     </el-form-item>
@@ -31,12 +31,7 @@
 <script setup>
 import { ref } from 'vue'
 import { onMounted } from 'vue';
-
-const sendEmail = () => {
-  // 在这里添加发送邮件逻辑
-
-}
-
+import {ElNotification} from "element-plus";
 onMounted(async () => {
 
 });
@@ -48,12 +43,109 @@ onMounted(() => {
 
 const resetForm = ref({
   username: '',
-  password: ''
+  email: ''
 })
 
-const submitLogin = () => {
-  // 在这里添加登录逻辑
-
+const submitReset = () => {
+  fetch(`/api/v1/userControl/resetPasswordCheck?username=${encodeURIComponent(resetForm.value.username)}&email=${encodeURIComponent(resetForm.value.email)}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  }).then(response => {
+    console.log('resetPasswordCheck response status:', response.status);
+    if (response.ok) {
+      return response.json();
+    } else if (response.status === 401) {
+      throw new Error('重置失败');
+    } else {
+      throw new Error('网络错误');
+    }
+  }).then(data => {
+    console.log('resetPasswordCheck response data:', data);
+    if (data.message === 'success') {
+      let password = Math.random().toString(36).slice(-8);
+      fetch(`/api/v1/userControl/resetPassword?email=${encodeURIComponent(resetForm.value.email)}&password=${encodeURIComponent(password)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }).then(response => {
+        console.log('resetPassword response status:', response.status);
+        if (response.ok) {
+          return response.json();
+        } else if (response.status === 401) {
+          throw new Error('重置失败');
+        } else {
+          throw new Error('网络错误');
+        }
+      }).then(data => {
+        console.log('resetPassword response data:', data);
+        if (data.message === 'success') {
+          fetch(`/api/v1/sendMail/sendMail?to=${encodeURIComponent(resetForm.value.email)}&subject=临时密码&text=您的新密码为${password}，请尽快重置`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          }).then(response => {
+            console.log('sendMail response status:', response.status);
+            if (response.ok) {
+              return response.json();
+            } else if (response.status === 401) {
+              throw new Error('发送邮件失败');
+            } else {
+              throw new Error('网络错误');
+            }
+          }).then(data => {
+            console.log('sendMail response data:', data);
+            if (data.message === 'Email sent successfully') {
+              ElNotification({
+                title: '成功',
+                message: '重置密码邮件已发送',
+                type: 'success'
+              });
+            } else {
+              ElNotification({
+                title: '失败',
+                message: '发送邮件失败',
+                type: 'error'
+              });
+            }
+          }).catch(error => {
+            ElNotification({
+              title: '错误',
+              message: error.message,
+              type: 'error'
+            });
+          });
+        } else {
+          ElNotification({
+            title: '失败',
+            message: '重置失败',
+            type: 'error'
+          });
+        }
+      }).catch(error => {
+        ElNotification({
+          title: '错误',
+          message: error.message,
+          type: 'error'
+        });
+      });
+    } else {
+      ElNotification({
+        title: '失败',
+        message: '信息不匹配',
+        type: 'error'
+      });
+    }
+  }).catch(error => {
+    ElNotification({
+      title: '错误',
+      message: error.message,
+      type: 'error'
+    });
+  });
 }
 
 </script>
