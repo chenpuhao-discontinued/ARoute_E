@@ -196,5 +196,21 @@ router.get('/getUserCount', function(req, res) {
   });
 });
 
+router.get('/getUsername', function(req, res) {
+  const db = createConnection();
+  const token = req.query.token;
+  db.get(`SELECT username FROM userInfo WHERE token = ?`, [token], function (error, row) {
+    db.close();
+    if (error) {
+      res.status(500).send({code: 500, message: 'Database error', error: error.message});
+    } else if (row) {
+      res.send({code: 200, message: 'success', data: row.username});
+    } else {
+      res.status(404).send({code: 404, message: 'User not found'});
+    }
+  });
+});
+
+
 
 module.exports = router;

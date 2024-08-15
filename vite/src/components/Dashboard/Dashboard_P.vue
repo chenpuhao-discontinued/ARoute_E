@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import {onMounted, ref} from 'vue';
 import { ElMenu, ElMenuItem, ElAside, ElMain } from 'element-plus';
 
 // 获取URL参数中的view
@@ -8,6 +8,11 @@ const initialView = urlParams.get('view') || 'home';
 
 // 定义当前视图
 const currentView = ref(initialView);
+
+const disableScrollbar = () => {
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden';
+};
 
 // 动态导入组件的函数
 const importComponent = async (name) => {
@@ -26,6 +31,10 @@ const navigate = async (view) => {
 
 // 定义当前组件
 const currentComponent = ref(null);
+
+onMounted(async () => {
+  disableScrollbar();
+});
 
 // 初始加载组件
 navigate(initialView);
@@ -106,4 +115,5 @@ navigate(initialView);
   border-top: 1px solid #ccc;
   margin: 10px 0;
 }
+
 </style>

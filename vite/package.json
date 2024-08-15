@@ -10,9 +10,15 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
+    "@toast-ui/editor": "^3.2.2",
+    "@toast-ui/vue-editor": "^3.2.3",
     "axios": "^1.7.3",
     "element-plus": "^2.8.0",
     "nodemailer": "^6.9.14",
+    "pinyin": "^4.0.0-alpha.2",
+    "quill": "^2.0.2",
+    "segmentit": "^2.0.3",
+    "vditor": "^3.10.5",
     "vue": "^3.4.35",
     "vue-router": "next"
   },

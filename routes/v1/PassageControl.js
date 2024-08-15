@@ -62,4 +62,58 @@ router.get('/total_reads', (req, res) => {
   });
 });
 
+//返回所有标签
+router.get('/tags', (req, res) => {
+  const query = 'SELECT * FROM tab';
+  db.all(query, [], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ tags: rows });
+  });
+});
+
+// 修改添加标签的API端点，参数为tag
+router.post('/add_tag', (req, res) => {
+  const tag = req.query.tag;
+  if (!tag) {
+    res.status(400).json({ error: 'Tag parameter is required' });
+    return;
+  }
+  const query = 'INSERT INTO tab (name) VALUES (?)';
+  db.run(query, [tag], function(err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ message: 'Tag added successfully', tagId: this.lastID });
+  });
+});
+
+//添加文章 参数有创作者，创作时间，别名，标题，内容，阅读数，标签
+router.post('/add_passage', (req, res) => {
+  const author = req.query.author;
+  const time = req.query.time;
+  const alias = req.query.alias;
+  const title = req.query.title;
+  const content = req.query.content;
+  const read = req.query.read;
+  const tag = req.query.tag;
+  const cover = req.query.cover;
+  const post = req.query.post;
+  if (!author || !time || !alias || !title || !content || !read || !tag) {
+    res.status(400).json({ error: 'All parameters are required' });
+    return;
+  }
+  const query = 'INSERT INTO passage (creator, created_at, alias, title, content, "read", tab, cover,post) VALUES (?, ?, ?, ?, ?, ?, ?,?,?)';
+  db.run(query, [author, time, alias, title, content, read, tag, cover, post], function(err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ message: 'Passage added successfully', passageId: this.lastID });
+  });
+});
+
 module.exports = router;

@@ -59,7 +59,7 @@ const submitLogin = () => {
         type: 'success'
       });
       //储存返回的token为5分钟的cookie
-      document.cookie = `token=${data.token};max-age=300;path=/`;
+      document.cookie = `token=${data.token};max-age=3000;path=/`;
       //延迟1秒跳转到登录页面
       setTimeout(() => {
         window.location.href = '/console/dashboard';
