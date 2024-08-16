@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-header">
-    <h2 class="dashboard-title">新建文章</h2>
+    <h2 class="dashboard-title">修改文章</h2>
     <div>
       <button class="settings-button" @click="isDrawerVisible = true">添加信息</button>
       <button class="settings-button" @click="saveArticle">仅保存</button>
@@ -16,9 +16,6 @@
       <el-form-item class="form-item" label="标题">
         <el-input v-model="title" placeholder="请输入标题"></el-input>
       </el-form-item>
-      <el-form-item class="form-item" label="别名">
-        <el-input v-model="alias" placeholder="请输入别名"></el-input>
-      </el-form-item>
       <el-form-item class="form-item" label="创建时间">
         <el-date-picker
             v-model="createTime"
@@ -28,11 +25,11 @@
       </el-form-item>
       <el-form-item class="form-item" label="标签">
         <el-select-v2
-          ref="select"
-          v-model="tags"
-          :options="tagOptions"
-          placeholder="请选择标签"
-          style="width: 240px"
+            ref="select"
+            v-model="tags"
+            :options="tagOptions"
+            placeholder="请选择标签"
+            style="width: 240px"
         >
           <template #footer>
             <el-button v-if="!isAddingTag" text bg size="small" @click="onAddTag">
@@ -40,10 +37,10 @@
             </el-button>
             <div v-else class="select-footer">
               <el-input
-                v-model="newTag"
-                class="option-input"
-                placeholder="输入标签名称"
-                size="small"
+                  v-model="newTag"
+                  class="option-input"
+                  placeholder="输入标签名称"
+                  size="small"
               />
 
               <div>
@@ -56,8 +53,6 @@
           </template>
         </el-select-v2>
       </el-form-item>
-
-
       <el-form-item class="form-item" label="分类">
         <el-select-v2
             ref="select"
@@ -67,7 +62,7 @@
             style="width: 240px"
         >
           <template #footer>
-              <el-button v-if="!isAddingCate" text bg size="small" @click="onAddCate">
+            <el-button v-if="!isAddingCate" text bg size="small" @click="onAddCate">
               添加分类
             </el-button>
             <div v-else class="select-footer">
@@ -107,26 +102,26 @@ import 'element-plus/dist/index.css';
 import axios from 'axios';
 import 'vditor/dist/index.css';
 import Vditor from 'vditor';
-import pinyin from 'pinyin';
+
 
 const editorContent = ref('');
-let vditorInstance = null;
+let vditor = null;
 const isDrawerVisible = ref(false);
 const title = ref('');
 const alias = ref('');
 const author = ref('');
 const tags = ref(''); // Single value for tag
-const cates = ref(''); // Single value for tag
 const cover = ref('');
 const isAddingTag = ref(false);
 const newTag = ref('');
 const tagOptions = ref([]);
+const createTime = ref('');
+const savedFormState = ref({});
 const isAddingCate = ref(false);
 const newCate = ref('');
 const cateOptions = ref([]);
+const cates = ref(''); // Single value for tag
 
-const createTime = ref('');
-const savedFormState = ref({});
 
 const fetchTags = async () => {
   try {
@@ -137,6 +132,31 @@ const fetchTags = async () => {
     }));
   } catch (error) {
     console.error('Failed to fetch tags:', error);
+  }
+};
+const fetchArticleByAlias = async (alias) => {
+  try {
+    const response = await fetch(`/api/v1/PassageControl/passage_by_alias?alias=${encodeURIComponent(alias)}`);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    const article = data.passage;
+    console.log('Fetched article:', article);
+    title.value = article.title;
+    createTime.value = new Date(article.created_at);
+    tags.value = typeof article.tab === 'string' ? article.tab : article.tab.join(', '); // Ensure this is a string
+    cover.value = article.cover;
+    cates.value = typeof article.categorization === 'string' ? article.categorization : article.categorization.join(', ');
+    editorContent.value = article.content;
+    if (vditor) {
+      console.log('vditor is initialized');
+      vditor.setValue(editorContent.value);
+    } else {
+      console.error('vditor is not initialized');
+    }
+  } catch (error) {
+    console.error('Failed to fetch article by alias:', error);
   }
 };
 
@@ -212,34 +232,6 @@ const clearCate = () => {
   isAddingCate.value = false;
 };
 
-
-// Function to remove punctuation, including Chinese punctuation
-const removePunctuation = (str) => {
-  return str.replace(/[.,\/#!$%\^&\*;:{}=_`~()，。！？、；：“”‘’（）【】《》]/g, '');
-};
-
-// Convert title to Pinyin, remove punctuation, and update alias
-const updateAlias = () => {
-  const pinyinTitle = pinyin(title.value, { style: pinyin.STYLE_NORMAL }).flat().join('-');
-  const sanitizedTitle = removePunctuation(pinyinTitle);
-  alias.value = sanitizedTitle.substring(0, 50);
-};
-
-// Watch title for changes and update alias
-watch(title, updateAlias);
-
-// Save the current form state
-const saveFormState = () => {
-  savedFormState.value = {
-    title: title.value,
-    alias: alias.value,
-    createTime: createTime.value,
-    tags: tags.value,
-    cover: cover.value,
-    editorContent: editorContent.value,
-  };
-};
-
 // Restore the saved form state
 const restoreFormState = () => {
   title.value = savedFormState.value.title;
@@ -248,14 +240,16 @@ const restoreFormState = () => {
   tags.value = savedFormState.value.tags;
   cover.value = savedFormState.value.cover;
   editorContent.value = savedFormState.value.editorContent;
-  vditorInstance.setValue(editorContent.value);
+  vditor.setValue(editorContent.value);
 };
 
+// 加载编辑器内容
+// 保存编辑器内容
 // 自动保存编辑器内容
 const autoSaveEditorContent = async () => {
   try {
-    editorContent.value = vditorInstance.getValue();
-    console.log('Editor content auto-saved');
+    editorContent.value = vditor.getValue();
+
   } catch (error) {
     console.error('Failed to auto-save editor content:', error);
   }
@@ -263,11 +257,10 @@ const autoSaveEditorContent = async () => {
 
 // 检查表单是否全部填写
 const isFormValid = () => {
-  const isValid = title.value && alias.value && createTime.value && tags.value && cover.value && editorContent.value;
+  const isValid = title.value && createTime.value && tags.value && cover.value && editorContent.value;
   if (!isValid) {
     console.log('Form validation failed:', {
       title: title.value,
-      alias: alias.value,
       createTime: createTime.value,
       tags: tags.value,
       cover: cover.value,
@@ -290,10 +283,14 @@ const cancelForm = () => {
   isDrawerVisible.value = false;
 };
 
+
 // 保存文章
 const saveArticle = async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const alias = urlParams.get('passage');
+  console.log('Alias from URL:', alias); // Log the alias to verify
   if (!isFormValid()) {
-    ElMessage.error('请填写所有必填字段(包括添加信息)');
+    ElMessage.error('请填写所有必填字段(包括附加加信息)');
     return;
   }
   const token = document.cookie.split('; ').find(row => row.startsWith('token='));
@@ -321,39 +318,49 @@ const saveArticle = async () => {
   // 将 createTime 转换为时间戳
   const timestamp = date.getTime();
 
+  // 保存编辑器内容
+  editorContent.value = vditor.getValue();
+
+
   try {
-    const response = await axios.post('/api/v1/PassageControl/add_passage', null, {
+    const response = await axios.post('/api/v1/PassageControl/update_passage', null, {
       params: {
         category: cates.value,
         author: author.value,
         time: timestamp,
-        alias: alias.value,
+        alias: alias, // 使用从URL获取的alias
         title: title.value,
         content: editorContent.value,
-        read: 0,
-        tag: tags.value, // Single tag value
+        tag: tags.value,
         cover: cover.value,
+
         post: false
       }
     });
     ElMessage.success('文章保存成功');
     // 重置所有内容
     title.value = '';
-    alias.value = '';
     createTime.value = '';
-    cates.value = '';
     tags.value = '';
     cover.value = '';
+    cates.value = '';
     editorContent.value = '';
-    vditorInstance.setValue('');
+    vditor.setValue('');
+    window.location.href = '/console/dashboard?view=allArticles';
   } catch (error) {
-    console.error('Failed to save article:', error);
+    ElMessage.error('文章保存失败:',error);
   }
+
+  //重定向到所有文章页面
+
 };
 
 const postArticle = async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const alias = urlParams.get('passage');
+  console.log('Alias from URL:', alias); // Log the alias to verify
   if (!isFormValid()) {
-    ElMessage.error('请填写所有必填字段(包括添加信息)');
+    ElMessage.error('请填写所有必填字段(包括附加加信息)');
     return;
   }
   const token = document.cookie.split('; ').find(row => row.startsWith('token='));
@@ -370,7 +377,7 @@ const postArticle = async () => {
     });
     author.value = response.data.data;
   } catch (error) {
-    console.error('Failed to get username:', error);
+    ElMessage.error('Failed to get username:', error);
   }
 
   const date = new Date(createTime.value);
@@ -381,39 +388,46 @@ const postArticle = async () => {
   // 将 createTime 转换为时间戳
   const timestamp = date.getTime();
 
+  // 保存编辑器内容
+  editorContent.value = vditor.getValue();
+
+
   try {
-    const response = await axios.post('/api/v1/PassageControl/add_passage', null, {
+    const response = await axios.post('/api/v1/PassageControl/update_passage', null, {
       params: {
         category: cates.value,
         author: author.value,
         time: timestamp,
-        alias: alias.value,
+        alias: alias, // 使用从URL获取的alias
         title: title.value,
         content: editorContent.value,
-        read: 0,
-        tag: tags.value, // Single tag value
+        tag: tags.value,
         cover: cover.value,
         post: true
       }
     });
-    ElMessage.success('文章保存并发布成功');
+    ElMessage.success('文章保存成功');
     // 重置所有内容
     title.value = '';
-    alias.value = '';
     createTime.value = '';
     tags.value = '';
     cover.value = '';
-    editorContent.value = '';
     cates.value = '';
-    vditorInstance.setValue('');
+    editorContent.value = '';
+    vditor.setValue('');
+    window.location.href = '/console/dashboard?view=allArticles';
   } catch (error) {
     console.error('Failed to save article:', error);
   }
+
+  //重定向到所有文章页面
+
 };
 
 onMounted(async () => {
   try {
-    vditorInstance = new Vditor('vditor', {
+    await nextTick(); // Ensure DOM is fully rendered
+    vditor = new Vditor('vditor', {
       height: '100%',
       width: '100%',
       mode: 'ir', // 使用即时渲染模式
@@ -426,8 +440,13 @@ onMounted(async () => {
         error: () => {},
       },
       after: () => {
-        vditorInstance.setValue(editorContent.value);
-      }
+        const urlParams = new URLSearchParams(window.location.search);
+        const alias = urlParams.get('passage');
+        console.log('Alias from URL:', alias); // Log the alias to verify
+        if (alias) {
+          fetchArticleByAlias(alias);
+        }
+      },
     });
     await fetchTags();
     await fetchCate();
@@ -436,14 +455,8 @@ onMounted(async () => {
     console.error('Failed to initialize Vditor or fetch tags:', error);
   }
 });
-
-// Watch for drawer visibility changes to save form state
-watch(isDrawerVisible, (newVal) => {
-  if (newVal) {
-    saveFormState();
-  }
-});
 </script>
+
 <style scoped>
 .form-item {
   user-select: none;
