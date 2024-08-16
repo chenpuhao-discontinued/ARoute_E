@@ -77,10 +77,10 @@ onMounted(async () => {
 <template>
   <div class="dashboard-header">
     <h2 class="dashboard-title">仪表盘</h2>
-    <button class="settings-button" @click="toggleEdit" v-if="!isEditing">修改</button>
+    <el-button class="settings-button" @click="toggleEdit" v-if="!isEditing">修改</el-button>
     <div v-else>
-      <button class="settings-button" @click="isDrawerVisible = true">添加</button>
-      <button class="settings-button" @click="toggleEdit">完成</button>
+      <el-button class="settings-button" @click="isDrawerVisible = true">添加</el-button>
+      <el-button class="settings-button" @click="toggleEdit">完成</el-button>
     </div>
   </div>
   <div class="components-container">
@@ -90,7 +90,7 @@ onMounted(async () => {
         class="component-wrapper"
     >
       <component :is="comp.component" />
-      <button class="delete-button" v-if="isEditing" @click="deleteComponent(comp.id)">×</button>
+      <el-button class="delete-button" v-if="isEditing" @click="deleteComponent(comp.id)">×</el-button>
     </div>
   </div>
 

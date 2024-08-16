@@ -1,6 +1,8 @@
 <script setup>
-import {onMounted, ref} from 'vue';
-import { ElMenu, ElMenuItem, ElAside, ElMain } from 'element-plus';
+import { onMounted, ref } from 'vue';
+import {ElMenu, ElMenuItem, ElAside, ElMain, ElMessage} from 'element-plus';
+import 'element-plus/dist/index.css'; // 确保引入样式
+import axios from 'axios'; // Import axios for API calls
 
 // 获取URL参数中的view
 const urlParams = new URLSearchParams(window.location.search);
@@ -32,8 +34,42 @@ const navigate = async (view) => {
 // 定义当前组件
 const currentComponent = ref(null);
 
+
+//获取用户名
+const username = ref('');
+
+const fetchUsername = async () => {
+  try {
+    const token = document.cookie.split('; ').find(row => row.startsWith('token='));
+    if (!token) {
+      ElMessage.error('登录过期，请重新登录');
+      setTimeout(() => {
+        window.location.href = '/console/login';
+      }, 1000);
+      return;
+    }
+    const response = await axios.get('/api/v1/userControl/getUsername?'+token);
+    if (response.data.code === 200) {
+      username.value = response.data.data;
+    } else {
+      username.value = '未知用户';
+    }
+  } catch (error) {
+    username.value = '获取用户失败';
+  }
+};
+
+const logout = () => {
+  // Delete the cookie named 'token'
+  document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+  // Redirect to the login page
+  window.location.href = '/console/login';
+}
+
 onMounted(async () => {
   disableScrollbar();
+  await fetchUsername(); // 获取用户名
 });
 
 // 初始加载组件
@@ -46,23 +82,41 @@ navigate(initialView);
       <div class="login-logo gradient-text">ARoute</div>
 
       <el-menu @select="navigate">
-        <hr class="divider" />
+        <hr class="divider"/>
         <el-menu-item index="home">主页</el-menu-item>
-        <hr class="divider" />
+        <hr class="divider"/>
         <el-menu-item index="newArticle">新建文章</el-menu-item>
         <el-menu-item index="allArticles">所有文章</el-menu-item>
         <el-menu-item index="allPages">所有页面</el-menu-item>
-        <hr class="divider" />
+        <hr class="divider"/>
         <el-menu-item index="theme">主题</el-menu-item>
         <el-menu-item index="plugin">插件</el-menu-item>
         <el-menu-item index="store">商店</el-menu-item>
-        <hr class="divider" />
+        <hr class="divider"/>
         <el-menu-item index="user">用户管理</el-menu-item>
         <el-menu-item index="setting">设置</el-menu-item>
+        <hr class="divider"/>
       </el-menu>
+
+      <div class="user-info">
+        <div class="user-info-row">
+          <span class="username">你好, {{ username }}</span>
+        </div>
+        <div class="user-info-row">
+          <span></span>
+          <div class="button-group">
+            <el-button class="logout-button">
+              <i class="fas fa-user"></i>
+            </el-button>
+            <el-button class="logout-button" @click="logout">
+              <i class="fas fa-sign-out-alt"></i>
+            </el-button>
+          </div>
+        </div>
+      </div>
     </el-aside>
     <el-main class="main-content">
-        <component :is="currentComponent" />
+      <component :is="currentComponent"/>
     </el-main>
   </div>
 </template>
@@ -71,7 +125,7 @@ navigate(initialView);
 .dashboard-container {
   display: flex;
   height: 100vh;
-  width: 100%; /* 确保宽度占满父容器 */
+  width: 100%;
 }
 
 .sidebar {
@@ -84,23 +138,27 @@ navigate(initialView);
   background-color: white;
   color: #4c4c4c;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .main-content {
-  margin-left: 250px; /* 确保左边界与sidebar右边界对齐 */
-  flex-grow: 1; /* 确保占满剩余空间 */
-  height: 100vh; /* 确保高度铺满 */
+  margin-left: 250px;
+  flex-grow: 1;
+  height: 100vh;
   overflow: auto;
-  box-sizing: border-box; /* 确保padding不会导致宽度超出 */
+  box-sizing: border-box;
 }
+
 .login-logo {
   margin: 0 auto;
   display: block;
   user-select: none;
-  font-size: 36px;
+  font-size: 53px;
   font-weight: bold;
-  border-right: 1px solid #ccc; /* 添加右侧边框 */
-  padding-right: 10px; /* 确保边框与文字之间有间距 */
+  border-right: 1px solid #ccc;
+  padding-right: 10px;
 }
 
 .gradient-text {
@@ -116,4 +174,47 @@ navigate(initialView);
   margin: 10px 0;
 }
 
+.user-info {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #ccc;
+  padding-right: 10px;
+}
+
+.user-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.username {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.role {
+  font-size: 16px;
+  color: #666;
+}
+
+.button-group {
+  display: flex;
+  gap: 0; /* Remove gap between buttons */
+}
+
+.logout-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4c4c4c;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.logout-button .fas {
+  font-size: 20px;
+}
 </style>

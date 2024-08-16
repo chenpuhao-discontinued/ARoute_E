@@ -2,9 +2,10 @@
   <div class="dashboard-header">
     <h2 class="dashboard-title">修改文章</h2>
     <div>
-      <button class="settings-button" @click="isDrawerVisible = true">添加信息</button>
-      <button class="settings-button" @click="saveArticle">仅保存</button>
-      <button class="settings-button" @click="postArticle">保存并发布</button>
+      <el-button class="settings-button" @click="isDrawerVisible = true">修改信息</el-button>
+      <el-button class="settings-button" @click="saveArticle">仅保存</el-button>
+      <el-button class="settings-button" @click="postArticle">保存并发布</el-button>
+      <el-button class="settings-button" @click="cancelEdit">取消</el-button>
     </div>
   </div>
   <div class="components-container">
@@ -121,6 +122,20 @@ const isAddingCate = ref(false);
 const newCate = ref('');
 const cateOptions = ref([]);
 const cates = ref(''); // Single value for tag
+
+const cancelEdit = () => {
+  //清空所有内容
+  title.value = '';
+  alias.value = '';
+  createTime.value = '';
+  tags.value = '';
+  cover.value = '';
+  editorContent.value = '';
+  cates.value = '';
+  vditor.setValue('');
+  //重定向到所有文章
+  window.location.href = '/console/dashboard?view=allArticles';
+};
 
 
 const fetchTags = async () => {

@@ -4,14 +4,8 @@ import Register from "../components/Register/Register.vue";
 import ResetPassword from "../components/ResetPassword/ResetPassword.vue";
 import Init from "../components/Init/Init.vue";
 import Dashboard from "../components/Dashboard/Dashboard.vue";
-import home from "../components/Dashboard/test.vue";
 
 const routes = [
-    {
-        path: '/test',
-        name: 'Test',
-        component: home
-    },
     {
         path: '/console',
         name: 'Console',

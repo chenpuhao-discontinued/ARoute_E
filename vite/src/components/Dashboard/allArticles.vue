@@ -216,8 +216,8 @@ onMounted(() => {
   <div class="dashboard-header">
     <h2 class="dashboard-title">所有文章</h2>
     <div>
-      <button class="settings-button" @click="isTagDrawerVisible = true">标签</button>
-      <button class="settings-button" @click="isCateDrawerVisible = true">分类</button>
+      <el-button class="settings-button" @click="isTagDrawerVisible = true">标签</el-button>
+      <el-button class="settings-button" @click="isCateDrawerVisible = true">分类</el-button>
     </div>
   </div>
   <div class="components-container">

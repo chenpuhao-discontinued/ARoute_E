@@ -210,6 +210,22 @@ router.get('/getUsername', function(req, res) {
     }
   });
 });
+//通过token返回用户权限
+router.get('/getUserTitle', function(req, res) {
+  const db = createConnection();
+  const token = req.query.token;
+  db.get(`SELECT title FROM userInfo WHERE token = ?`, [token], function (error, row) {
+    db.close();
+    if (error) {
+      res.status(500).send({code: 500, message: 'Database error', error: error.message});
+    } else if (row) {
+      res.send({code: 200, message: 'success', data: row.title});
+    } else {
+      res.status(404).send({code: 404, message: 'User not found'});
+    }
+  });
+});
+
 
 
 
