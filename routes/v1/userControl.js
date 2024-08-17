@@ -226,7 +226,21 @@ router.get('/getUserTitle', function(req, res) {
   });
 });
 
-
+//返回特定用户信息
+router.get('/getUserInfo', function(req, res) {
+  const db = createConnection();
+  const token = req.query.token;
+  db.get(`SELECT * FROM userInfo WHERE token = ?`, [token], function (error, row) {
+    db.close();
+    if (error) {
+      res.status(500).send({code: 500, message: 'Database error', error: error.message});
+    } else if (row) {
+      res.send({code: 200, message: 'success', data: row});
+    } else {
+      res.status(404).send({code: 404, message: 'User not found'});
+    }
+  });
+});
 
 
 module.exports = router;

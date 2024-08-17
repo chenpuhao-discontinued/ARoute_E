@@ -22,6 +22,10 @@ const importComponent = async (name) => {
   return await import(/* @vite-ignore */ `./${name}.vue`);
 };
 
+const profile = () => {
+  navigate('profile');
+};
+
 // 导航函数
 const navigate = async (view) => {
   const url = new URL(window.location);
@@ -60,11 +64,15 @@ const fetchUsername = async () => {
 };
 
 const logout = () => {
-  // Delete the cookie named 'token'
   document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-
-  // Redirect to the login page
-  window.location.href = '/console/login';
+  ElMessage({
+    message: '成功注销，即将导航到登录界面',
+    type: 'success',
+    plain: true,
+  })
+  setTimeout(() => {
+    window.location.href = '/console/login';
+  }, 1000);
 }
 
 onMounted(async () => {
@@ -105,7 +113,7 @@ navigate(initialView);
         <div class="user-info-row">
           <span></span>
           <div class="button-group">
-            <el-button class="logout-button">
+            <el-button class="logout-button" @click="profile">
               <i class="fas fa-user"></i>
             </el-button>
             <el-button class="logout-button" @click="logout">
